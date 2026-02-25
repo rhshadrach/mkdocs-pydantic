@@ -1,0 +1,83 @@
+[project]
+name = "mkdocs-pydantic"
+description = "MkDocs plugin to render Pydantic classes."
+authors = [
+    { name = "Richard Shadrach", email = "rhshadrach@gmail.com" },
+]
+keywords = [
+    'pydantic',
+    'mkdocs',
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">= 3.8"
+version = "0.0.1"
+dependencies = ["mkdocs", "pydantic"]
+classifiers=[
+    'Development Status :: 1 - Planning',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Intended Audience :: Developers',
+    'Intended Audience :: System Administrators',
+    'Operating System :: OS Independent',
+    'Topic :: Documentation',
+]
+
+[project.entry-points."mkdocs.plugins"]
+"pydantic" = "mkdocs_pydantic:MkdocsPydantic"
+
+[project.urls]
+Documentation = "https://github.com/rhshadrach/mkdocs-pydantic/tree/main#readme"
+Source = "https://github.com/rhshadrach/mkdocs-pydantic"
+Tracker = "https://github.com/rhshadrach/mkdocs-pydantic/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+#[tool.setuptools]
+#packages = ["mkdocs_pydantic", "mkdocs_pydantic_example"]
+#package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mkdocs_pydantic*"]
+namespaces = false
+
+[project.optional-dependencies]
+lint = ["pre-commit"]
+test = ["pytest"]
+dev = ["mkdocs-pydantic[lint, test]"]
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = [
+    "A",   # flake8-builtins
+    # "ANN", # flake8-annotations
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    # "D",   # pydocstyle
+    "DOC", # pydoclint
+    "E",   # pycodestyle - error
+    "F",   # Pyflakes
+    "FA",  # flake8-future-annotations
+    # "FBT", # flake8-boolean-trap
+    "G",   # flake8-logging-format
+    "I",   # isort
+    "INP", # flake8-no-pep420
+    "ISC", # flake8-implicit-str-concat
+    "LOG", # flake8-logging
+    "N",   # pep8-naming
+    "PERF", # Perflint
+    "PIE", # flake8-pie
+    "PL",  # Pylint
+    "Q",   # flake8-quotes
+    "RUF", # Ruff-specific rules
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "UP",  # pyupgrade
+    "W",   # pycodestyle - warning
+    "YTT", # flake8-2020
+]

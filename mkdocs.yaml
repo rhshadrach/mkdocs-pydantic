@@ -1,0 +1,19 @@
+site_name: mkdocs-pydantic
+theme:
+  name: readthedocs
+nav:
+  - Example:
+      - pydantic:::mkdocs_pydantic_example.Settings
+      - other/index.md
+  - Example2:
+      - Subdirectory:
+        - pydantic:::mkdocs_pydantic_example.Settings
+        - other/index.md
+      - Other:
+          - other/index.md
+  - pydantic:::mkdocs_pydantic_example.Settings
+  - Static Example:
+      - static/index.md
+
+plugins:
+  - pydantic

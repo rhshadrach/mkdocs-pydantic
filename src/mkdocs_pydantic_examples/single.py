@@ -2,7 +2,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
-class Settings(BaseSettings):
+class Single(BaseSettings):
     integer_with_default: int = Field(
         default=1,
         examples=[2, 3, 4],

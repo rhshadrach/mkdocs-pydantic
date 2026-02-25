@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ForwardRef
 import io
 import importlib
 import pprint
@@ -27,8 +27,6 @@ def import_class_from_string(fully_qualified_name_str):
     Returns:
         type: The imported class object.
     """
-    import sys
-    print(sys.path)
     # 1. Split the string into module name and class name
     try:
         module_name, class_name = fully_qualified_name_str.rsplit(".", 1)
@@ -146,13 +144,15 @@ class MakeMd:
     def extend_files(self, files: Files, config: MkDocsConfig, rel_path: Path):
         result: list[File] = []
 
+        idx = 0
         top_level_markdown = self.make_top_level()
         top_level_file = File(
-            path=str(rel_path / f"00_top_level.md"),
+            path=str(rel_path / f"{idx:02}_{self.root.__name__}.md"),
             src_dir=config['docs_dir'],
             dest_dir=config['site_dir'],
             use_directory_urls=config['use_directory_urls']
         )
+        idx += 1
 
         base_path = Path(top_level_file.abs_src_path).parent
         os.makedirs(base_path, exist_ok=True)
@@ -161,7 +161,14 @@ class MakeMd:
         files.append(top_level_file)
         result.append(top_level_file)
 
-        for idx, (name, field) in enumerate(self.root.model_fields.items(), 1):
+        for name, field in self.root.model_fields.items():
+            print(name, field.annotation)
+            if isinstance(field.annotation, ForwardRef):
+                # TODO: Add test for this case.
+                raise ValueError(
+                    f"{self.root.__name__} contains a ForwardRef on the field {name}."
+                    " The model must be rebuilt."
+                )
             if field.annotation is None:
                 # TODO: Why skip?
                 continue
@@ -171,6 +178,7 @@ class MakeMd:
             except TypeError:
                 # issubclass raises on things that aren't classes.
                 continue
+            print("HERE")
 
             markdown = self.make_sub_level(field.annotation, name)
             file = File(
@@ -179,6 +187,8 @@ class MakeMd:
                 dest_dir=config['site_dir'],
                 use_directory_urls=config['use_directory_urls']
             )
+            idx += 1
+            print(file.abs_src_path)
             with open(file.abs_src_path, 'w') as fh:
                 fh.write(markdown)
             files.append(file)

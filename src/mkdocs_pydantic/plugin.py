@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+from typing import ForwardRef
 from pathlib import Path
 
 from mkdocs.plugins import BasePlugin
@@ -24,8 +24,6 @@ class MkdocsPydantic(BasePlugin):
                     curr = curr.children[crumb]
                 else:
                     curr = curr[crumb]
-            print(int_breadcrumbs, tuple(int_breadcrumbs))
-            print(self.files.values())
             for file in self.files[tuple(int_breadcrumbs)]:
                 if isinstance(curr, Section):
                     curr.children[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)

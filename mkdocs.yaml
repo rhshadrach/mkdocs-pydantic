@@ -3,15 +3,11 @@ theme:
   name: readthedocs
 nav:
   - Example:
-      - pydantic:::mkdocs_pydantic_example.Settings
-      - other/index.md
+      - pydantic:::mkdocs_pydantic_examples.TwoLevels
   - Example2:
       - Subdirectory:
-        - pydantic:::mkdocs_pydantic_example.Settings
-        - other/index.md
-      - Other:
-          - other/index.md
-  - pydantic:::mkdocs_pydantic_example.Settings
+        - pydantic:::mkdocs_pydantic_examples.ThreeLevels
+  - pydantic:::mkdocs_pydantic_examples.Single
   - Static Example:
       - static/index.md
 

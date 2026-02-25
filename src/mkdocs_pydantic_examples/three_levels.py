@@ -58,3 +58,4 @@ class ThirdLevel(BaseSettings):
     )
 
 ThreeLevels.model_rebuild()
+SecondLevel.model_rebuild()

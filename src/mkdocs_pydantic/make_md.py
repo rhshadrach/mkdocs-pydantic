@@ -105,7 +105,7 @@ class MakeMd:
         return result
 
     def make_top_level(self) -> str:
-        result = "# Top Level\n\n"
+        result = f"# {self.root.__name__}\n\n"
         for name, field in self.root.model_fields.items():
             result += (
                 '<div class="mkdocs-pydantic-field" markdown>\n\n'
@@ -147,7 +147,7 @@ class MakeMd:
         idx = 0
         top_level_markdown = self.make_top_level()
         top_level_file = File(
-            path=str(rel_path / f"{idx:02}_{self.root.__name__}.md"),
+            path=str(rel_path / f"index.md"),
             src_dir=config['docs_dir'],
             dest_dir=config['site_dir'],
             use_directory_urls=config['use_directory_urls']
@@ -159,10 +159,9 @@ class MakeMd:
         with open(top_level_file.abs_src_path, 'w') as fh:
             fh.write(top_level_markdown)
         files.append(top_level_file)
-        result.append(top_level_file)
+        result.append((self.root.__name__, top_level_file))
 
         for name, field in self.root.model_fields.items():
-            print(name, field.annotation)
             if isinstance(field.annotation, ForwardRef):
                 # TODO: Add test for this case.
                 raise ValueError(
@@ -178,7 +177,6 @@ class MakeMd:
             except TypeError:
                 # issubclass raises on things that aren't classes.
                 continue
-            print("HERE")
 
             markdown = self.make_sub_level(field.annotation, name)
             file = File(
@@ -188,9 +186,8 @@ class MakeMd:
                 use_directory_urls=config['use_directory_urls']
             )
             idx += 1
-            print(file.abs_src_path)
             with open(file.abs_src_path, 'w') as fh:
                 fh.write(markdown)
             files.append(file)
-            result.append(file)
+            result.append((field.annotation.__name__, file))
         return result

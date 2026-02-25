@@ -1,13 +1,15 @@
 site_name: mkdocs-pydantic
 theme:
-  name: readthedocs
+  name: material
+  features:
+    - navigation.indexes
+    - navigation.expand
 nav:
-  - Example:
-      - pydantic:::mkdocs_pydantic_examples.TwoLevels
-  - Example2:
-      - Subdirectory:
-        - pydantic:::mkdocs_pydantic_examples.ThreeLevels
-  - pydantic:::mkdocs_pydantic_examples.Single
+  - index.md
+  - TwoLevels: 'pydantic:::mkdocs_pydantic_examples.TwoLevels'
+  - Base Directory:
+      - ThreeLevels: 'pydantic:::mkdocs_pydantic_examples.ThreeLevels'
+  - pydantic:::mkdocs_pydantic_examples.SingleLevel
   - Static Example:
       - static/index.md
 

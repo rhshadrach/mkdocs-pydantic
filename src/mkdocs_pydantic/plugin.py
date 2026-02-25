@@ -14,7 +14,7 @@ from mkdocs_pydantic.make_md import MakeMd
 class MkdocsPydantic(BasePlugin):
     def __init__(self):
         self.pydantic_items: list[tuple[str, list[int | str]]] = []
-        self.files: dict[tuple[int, ...], list[File]] = {}
+        self.files: dict[tuple[int, ...], list[tuple[str, File]]] = {}
 
     def on_nav(self, nav: Navigation, config: MkDocsConfig, files: Files) -> Navigation:
         for k, (class_path, breadcrumbs, int_breadcrumbs) in enumerate(self.pydantic_items):
@@ -24,11 +24,24 @@ class MkdocsPydantic(BasePlugin):
                     curr = curr.children[crumb]
                 else:
                     curr = curr[crumb]
-            for file in self.files[tuple(int_breadcrumbs)]:
-                if isinstance(curr, Section):
-                    curr.children[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
-                else:
-                    curr[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
+
+            files = self.files[tuple(int_breadcrumbs)]
+            obj: Page | Section
+            assert len(files) > 0
+
+            name, file = files[0]
+            children = [Page(title=name, file=file, config=config)]
+            for name, file in files[1:]:
+                children.append(Page(title=name, file=file, config=config))
+
+            section_title = files[0][0] if len(breadcrumbs) == 0 else breadcrumbs[-1]
+            obj = Section(title=section_title, children=children)
+
+            if isinstance(curr, Section):
+                curr.children[int_breadcrumbs[-1]] = obj
+            else:
+                curr[int_breadcrumbs[-1]] = obj
+
         return nav
 
     def on_files(self, files: Files, config: MkDocsConfig):

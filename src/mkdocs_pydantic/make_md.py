@@ -144,6 +144,8 @@ class MakeMd:
         return result
 
     def extend_files(self, files: Files, config: MkDocsConfig, rel_path: Path):
+        result: list[File] = []
+
         top_level_markdown = self.make_top_level()
         top_level_file = File(
             path=str(rel_path / f"00_top_level.md"),
@@ -151,11 +153,13 @@ class MakeMd:
             dest_dir=config['site_dir'],
             use_directory_urls=config['use_directory_urls']
         )
+
         base_path = Path(top_level_file.abs_src_path).parent
         os.makedirs(base_path, exist_ok=True)
         with open(top_level_file.abs_src_path, 'w') as fh:
             fh.write(top_level_markdown)
         files.append(top_level_file)
+        result.append(top_level_file)
 
         for idx, (name, field) in enumerate(self.root.model_fields.items(), 1):
             if field.annotation is None:
@@ -178,3 +182,5 @@ class MakeMd:
             with open(file.abs_src_path, 'w') as fh:
                 fh.write(markdown)
             files.append(file)
+            result.append(file)
+        return result

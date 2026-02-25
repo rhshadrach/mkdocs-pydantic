@@ -14,29 +14,31 @@ from mkdocs_pydantic.make_md import MakeMd
 class MkdocsPydantic(BasePlugin):
     def __init__(self):
         self.pydantic_items: list[tuple[str, list[int | str]]] = []
-        self.files = []
+        self.files: dict[tuple[int, ...], list[File]] = {}
 
     def on_nav(self, nav: Navigation, config: MkDocsConfig, files: Files) -> Navigation:
-        for k, ((class_path, breadcrumbs, int_breadcrumbs), file) in enumerate(zip(self.pydantic_items, self.files)):
+        for k, (class_path, breadcrumbs, int_breadcrumbs) in enumerate(self.pydantic_items):
             curr = nav.items
             for k, crumb in enumerate(int_breadcrumbs[:-1]):
                 if isinstance(curr, Section):
                     curr = curr.children[crumb]
                 else:
                     curr = curr[crumb]
-                print(f"{k}.", crumb, "current:", curr, "children:", curr.children)
-            if isinstance(curr, Section):
-                curr.children[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
-            else:
-                curr[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
+            print(int_breadcrumbs, tuple(int_breadcrumbs))
+            print(self.files.values())
+            for file in self.files[tuple(int_breadcrumbs)]:
+                if isinstance(curr, Section):
+                    curr.children[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
+                else:
+                    curr[int_breadcrumbs[-1]] = Page(title=f"Page {k}", file=file, config=config)
         return nav
 
     def on_files(self, files: Files, config: MkDocsConfig):
         self.pydantic_items = find_pydantic_items(config["nav"])
-        for k, (class_path, breadcrumbs, _) in enumerate(self.pydantic_items):
+        for k, (class_path, breadcrumbs, int_breadcrumbs) in enumerate(self.pydantic_items):
             path = Path("/".join(e for e in breadcrumbs))
             make_md = MakeMd(class_path)
-            make_md.extend_files(files, config, rel_path=path)
+            self.files[tuple(int_breadcrumbs)] = make_md.extend_files(files, config, rel_path=path)
         return files
 
 

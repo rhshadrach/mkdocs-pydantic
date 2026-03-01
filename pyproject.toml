@@ -24,7 +24,7 @@ classifiers=[
 ]
 
 [project.entry-points."mkdocs.plugins"]
-"pydantic" = "mkdocs_pydantic:MkdocsPydantic"
+"mkdocs-pydantic" = "mkdocs_pydantic:MkdocsPydantic"
 
 [project.urls]
 Documentation = "https://github.com/rhshadrach/mkdocs-pydantic/tree/main#readme"

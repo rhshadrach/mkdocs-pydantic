@@ -10,7 +10,7 @@ runs:
   using: composite
   steps:
     - name: Install uv
-      uses: astra-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: "3.13"
         activate-environment: "true"

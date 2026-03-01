@@ -8,7 +8,6 @@ from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import Files
 from mkdocs.structure.nav import Navigation, Section
-from mkdocs.structure.pages import Page
 from pydantic_settings import BaseSettings
 
 from mkdocs_pydantic import make_md
@@ -31,7 +30,6 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
                 else:
                     curr = curr[crumb]
 
-            obj: Page | Section
             obj = pydantic_entry.make_nav_object(config)
 
             if isinstance(curr, Section):

@@ -1,8 +1,7 @@
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel, Field
 
 
-class SingleLevel(BaseSettings):
+class SingleLevel(BaseModel):
     integer_with_default: int = Field(
         default=1,
         examples=[2, 3, 4],

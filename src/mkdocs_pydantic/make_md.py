@@ -5,18 +5,15 @@ import pprint
 from pathlib import Path
 from typing import Any, ForwardRef
 
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
-from pydantic_settings import BaseSettings
 
 from mkdocs_pydantic.structs import Node
 
 
 def run(
-    model: type[BaseSettings],
-    rel_path: Path,
-    name: str | None,
-    prefix: str | None = None,
+    model: type[BaseModel], rel_path: Path, name: str | None, prefix: str | None = None
 ) -> Node:
     if name is None:
         name = model.__name__
@@ -40,7 +37,7 @@ def run(
     return model_file
 
 
-def make_markdown(klass: type[BaseSettings], name: str, prefix: str) -> str:
+def make_markdown(klass: type[BaseModel], name: str, prefix: str) -> str:
     result = f"# {name}\n\n"
     for field_name, field in klass.model_fields.items():
         result += f"{markdown_field(field_name, field, prefix=prefix, level=2)}---\n\n"
@@ -83,10 +80,8 @@ def formatted_default(obj: Any) -> str:
     return result
 
 
-def extract_submodels(
-    model: type[BaseSettings],
-) -> list[tuple[str, type[BaseSettings]]]:
-    result: list[tuple[str, type[BaseSettings]]] = []
+def extract_submodels(model: type[BaseModel]) -> list[tuple[str, type[BaseModel]]]:
+    result: list[tuple[str, type[BaseModel]]] = []
     for name, field in model.model_fields.items():
         if isinstance(field.annotation, ForwardRef):
             # TODO: Add test for this case.
@@ -97,7 +92,7 @@ def extract_submodels(
         if field.annotation is None:
             continue
         try:
-            if not issubclass(field.annotation, BaseSettings):
+            if not issubclass(field.annotation, BaseModel):
                 continue
         except TypeError:
             # issubclass raises on things that aren't classes.

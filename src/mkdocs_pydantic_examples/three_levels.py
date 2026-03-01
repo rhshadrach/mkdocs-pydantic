@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel, Field
 
 
-class ThreeLevels(BaseSettings):
+class ThreeLevels(BaseModel):
     integer_with_default: int = Field(
         default=1,
         examples=[2, 3, 4],
@@ -23,7 +22,7 @@ class ThreeLevels(BaseSettings):
     )
 
 
-class SecondLevel(BaseSettings):
+class SecondLevel(BaseModel):
     list_with_default: list[int] = Field(
         default=[1, 2, 3],
         examples=[[2, 3, 4]],
@@ -42,7 +41,7 @@ class SecondLevel(BaseSettings):
     )
 
 
-class ThirdLevel(BaseSettings):
+class ThirdLevel(BaseModel):
     list_with_default: list[int] = Field(
         default=[1, 2, 3],
         examples=[[2, 3, 4]],

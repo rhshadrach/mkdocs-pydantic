@@ -8,7 +8,7 @@ from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.files import Files
 from mkdocs.structure.nav import Navigation, Section
-from pydantic_settings import BaseSettings
+from pydantic import BaseModel
 
 from mkdocs_pydantic import make_md
 from mkdocs_pydantic.structs import PydanticEntry
@@ -79,7 +79,7 @@ def find_pydantic_entries(
     return pydantic_entries
 
 
-def import_class_from_string(fully_qualified_name_str: str) -> type[BaseSettings]:
+def import_class_from_string(fully_qualified_name_str: str) -> type[BaseModel]:
     """
     Dynamically imports a class given its fully qualified name string.
 
@@ -100,7 +100,7 @@ def import_class_from_string(fully_qualified_name_str: str) -> type[BaseSettings
 
     module = importlib.import_module(module_name)
     class_object = getattr(module, class_name)
-    assert issubclass(class_object, BaseSettings)
+    assert issubclass(class_object, BaseModel)
 
     # TODO: Why doesn't mypy narrow here?
     return class_object  # type: ignore[no-any-return]

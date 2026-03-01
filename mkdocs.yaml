@@ -4,12 +4,23 @@ theme:
   features:
     - navigation.indexes
     - navigation.expand
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
 nav:
   - index.md
   - TwoLevels: 'pydantic:::mkdocs_pydantic_examples.TwoLevels'
   - Base Directory:
       - ThreeLevels: 'pydantic:::mkdocs_pydantic_examples.ThreeLevels'
-  - pydantic:::mkdocs_pydantic_examples.SingleLevel
+  - 'pydantic:::mkdocs_pydantic_examples.SingleLevel'
   - Static Example:
       - static/index.md
 

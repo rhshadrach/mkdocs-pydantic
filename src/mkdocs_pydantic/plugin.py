@@ -24,7 +24,7 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
         # TODO: Improve use of curr - it's either a Section or ...?
         for pydantic_entry in self.pydantic_entries:
             curr: list[Any] = nav.items
-            for crumb in pydantic_entry.int_breadcrumbs[:-1]:
+            for crumb in pydantic_entry.breadcrumbs[:-1]:
                 if isinstance(curr, Section):
                     curr = curr.children[crumb]  # type: ignore[assignment]
                 else:
@@ -42,9 +42,9 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
                 obj = Section(title=pydantic_entry.root.name, children=children)
 
             if isinstance(curr, Section):
-                curr.children[pydantic_entry.int_breadcrumbs[-1]] = obj
+                curr.children[pydantic_entry.breadcrumbs[-1]] = obj
             else:
-                curr[pydantic_entry.int_breadcrumbs[-1]] = obj
+                curr[pydantic_entry.breadcrumbs[-1]] = obj
         print(nav)  # noqa: T201
         return nav
 
@@ -70,37 +70,30 @@ def find_pydantic_items(
     data: Any,
     files: Files,
     config: MkDocsConfig,
-    breadcrumbs: list[str] | None = None,
-    int_breadcrumbs: list[int] | None = None,
+    path: Path = Path("."),
+    breadcrumbs: list[int] | None = None,
 ) -> list[PydanticEntry]:
     pydantic_entries = []
     if breadcrumbs is None:
         breadcrumbs = []
-    if int_breadcrumbs is None:
-        int_breadcrumbs = []
 
     if isinstance(data, list):
         # Recurse into each item in the list
         for idx, item in enumerate(data):
             pydantic_entries.extend(
-                find_pydantic_items(
-                    item, files, config, breadcrumbs, [*int_breadcrumbs, idx]
-                )
+                find_pydantic_items(item, files, config, path, [*breadcrumbs, idx])
             )
     elif isinstance(data, dict):
         # Recurse into each value in the dictionary
         for key, value in data.items():
             pydantic_entries.extend(
-                find_pydantic_items(
-                    value, files, config, [*breadcrumbs, key], int_breadcrumbs
-                )
+                find_pydantic_items(value, files, config, path / key, breadcrumbs)
             )
     elif isinstance(data, str) and data.startswith("pydantic:::"):
         class_path = data[len("pydantic:::") :]
-        path = Path("/".join(e for e in breadcrumbs[:-1]))
         make_md = MakeMd(class_path)
         entry = make_md.extend_files(
-            class_path, breadcrumbs, int_breadcrumbs, files, config, rel_path=path
+            class_path, breadcrumbs, files, config, rel_path=path.parent
         )
         pydantic_entries.append(entry)
 

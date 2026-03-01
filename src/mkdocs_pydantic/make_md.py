@@ -163,8 +163,7 @@ class MakeMd:
     def extend_files(
         self,
         class_path: str,
-        breadcrumbs: list[str],
-        int_breadcrumbs: list[int],
+        breadcrumbs: list[int],
         files: Files,
         config: MkDocsConfig,
         rel_path: Path,
@@ -175,7 +174,6 @@ class MakeMd:
         result = PydanticEntry(
             class_path=class_path,
             breadcrumbs=breadcrumbs,
-            int_breadcrumbs=int_breadcrumbs,
             root=model_file,
         )
         return result

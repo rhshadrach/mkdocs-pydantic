@@ -8,8 +8,7 @@ from mkdocs.structure.files import File
 @dataclasses.dataclass
 class PydanticEntry:
     class_path: str
-    breadcrumbs: list[str]
-    int_breadcrumbs: list[int]
+    breadcrumbs: list[int]
     root: Node
 
 

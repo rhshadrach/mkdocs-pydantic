@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup environement
-        uses: ./github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-extras: 'docs'
 

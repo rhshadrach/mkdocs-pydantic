@@ -16,7 +16,9 @@ runs:
         activate-environment: "true"
 
     - name: Install dependencies
+      shell: bash
       run: uv pip install .[${{ inputs.install-extras }}]
 
     - name: List installed packages
+      shell: bash
       run: uv pip freeze

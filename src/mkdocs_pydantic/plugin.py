@@ -12,7 +12,7 @@ from mkdocs.structure.nav import Navigation, Section
 from mkdocs.structure.pages import Page
 from pydantic_settings import BaseSettings
 
-from mkdocs_pydantic.make_md import MakeMd
+from mkdocs_pydantic import make_md
 from mkdocs_pydantic.structs import Node, PydanticEntry
 
 
@@ -40,37 +40,38 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
                     config=config,
                 )
             else:
-                children = make_section(node=pydantic_entry.root, config=config)
+                children = make_section_children(
+                    node=pydantic_entry.root, config=config
+                )
                 obj = Section(title=pydantic_entry.root.name, children=children)
 
             if isinstance(curr, Section):
                 curr.children[pydantic_entry.breadcrumbs[-1]] = obj
             else:
                 curr[pydantic_entry.breadcrumbs[-1]] = obj
-        print(nav)  # noqa: T201
         return nav
 
     def on_files(self, files: Files, config: MkDocsConfig) -> Files:
-        self.pydantic_entries = find_pydantic_items(config["nav"])
+        self.pydantic_entries = find_pydantic_entries(config["nav"])
         for entry in self.pydantic_entries:
             entry.add_files(files, config)
         return files
 
 
-def make_section(node: Node, config: MkDocsConfig) -> list[StructureItem]:
+def make_section_children(node: Node, config: MkDocsConfig) -> list[StructureItem]:
     result: list[StructureItem] = [Page(title=node.name, file=node.file, config=config)]
     for child in node.children:
         obj: Page | Section
         if len(child.children) == 0:
             obj = Page(title=child.name, file=child.file, config=config)
         else:
-            children = make_section(node=child, config=config)
+            children = make_section_children(node=child, config=config)
             obj = Section(title=child.name, children=children)
         result.append(obj)
     return result
 
 
-def find_pydantic_items(
+def find_pydantic_entries(
     data: Any, path: Path = Path("."), breadcrumbs: list[int] | None = None
 ) -> list[PydanticEntry]:
     pydantic_entries = []
@@ -81,17 +82,18 @@ def find_pydantic_items(
         # Recurse into each item in the list
         for idx, item in enumerate(data):
             pydantic_entries.extend(
-                find_pydantic_items(item, path, [*breadcrumbs, idx])
+                find_pydantic_entries(item, path, [*breadcrumbs, idx])
             )
     elif isinstance(data, dict):
         # Recurse into each value in the dictionary
         for key, value in data.items():
-            pydantic_entries.extend(find_pydantic_items(value, path / key, breadcrumbs))
+            pydantic_entries.extend(
+                find_pydantic_entries(value, path / key, breadcrumbs)
+            )
     elif isinstance(data, str) and data.startswith("pydantic:::"):
         class_path = data[len("pydantic:::") :]
-        make_md = MakeMd(class_path)
         model = import_class_from_string(class_path)
-        model_file = make_md.extend_files(model, rel_path=path.parent)
+        model_file = make_md.run(model, rel_path=path.parent)
         entry = PydanticEntry(
             class_path=class_path, breadcrumbs=breadcrumbs, root=model_file
         )

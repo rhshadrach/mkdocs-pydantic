@@ -30,18 +30,21 @@ class MkdocsPydantic(BasePlugin):
             assert len(files) > 0
 
             name, file = files[0]
-            children = [Page(title=name, file=file, config=config)]
-            for name, file in files[1:]:
-                children.append(Page(title=name, file=file, config=config))
+            if len(files) == 1:
+                obj = Page(title=name, file=file, config=config)
+            else:
+                children = [Page(title=name, file=file, config=config)]
+                for name, file in files[1:]:
+                    children.append(Page(title=name, file=file, config=config))
 
-            section_title = files[0][0] if len(breadcrumbs) == 0 else breadcrumbs[-1]
-            obj = Section(title=section_title, children=children)
+                section_title = files[0][0] if len(breadcrumbs) == 0 else breadcrumbs[-1]
+                obj = Section(title=section_title, children=children)
 
             if isinstance(curr, Section):
                 curr.children[int_breadcrumbs[-1]] = obj
             else:
                 curr[int_breadcrumbs[-1]] = obj
-
+        print(nav)
         return nav
 
     def on_files(self, files: Files, config: MkDocsConfig):

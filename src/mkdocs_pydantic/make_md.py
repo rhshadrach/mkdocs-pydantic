@@ -80,7 +80,7 @@ class MakeMd:
         )
         return result
 
-    def markdown_field(self, name: str, field: FieldInfo, prefix: str = "settings", level: int = 3) -> str:
+    def markdown_field(self, name: str, field: FieldInfo, prefix: str, level: int = 3) -> str:
         result = ""
         toc_label = f'{{ data-toc-label="{name}" }}'
         result += f"{'#' * level} {prefix}.{name} {toc_label}\n\n"
@@ -109,59 +109,27 @@ class MakeMd:
         for name, field in self.root.model_fields.items():
             result += (
                 '<div class="mkdocs-pydantic-field" markdown>\n\n'
-                f"{self.markdown_field(name, field)}"  # TODO: Add \n?
+                f"{self.markdown_field(name, field, prefix=self.root.__name__)}"  # TODO: Add \n?
                 "</div>\n\n"
                 "---\n\n"
             )
         return result
 
-    def make_sub_level(self, klass: type[BaseSettings], attr: str) -> str:
+    def make_sub_level(self, klass: type[BaseSettings], prefix: str) -> str:
         name = klass.__name__
         # TODO: Get title from klass?
         title = name
         result = f"# {title}\n\n"
         for name, field in klass.model_fields.items():
-            if isinstance(field.default, BaseSettings):
-                result += (
-                    f"## {name}\n\n"
-                    f"{field.title}\n\n"
-                    f"{HTML_HR}\n\n"
-                )
-                for subname, subfield in field.default.model_fields.items():
-                    result += (
-                        '<div class="mkdocs-pydantic-field" markdown>\n\n'
-                        f"{self.markdown_field(subname, subfield, prefix=f'settings.{attr}.{name}')}"
-                        "---\n\n"
-                        "</div>\n\n"
-                    )
-            else:
-                result += (
-                    f"{self.markdown_field(name, field, prefix=f'settings.{attr}', level=2)}"
-                    f"---\n\n"
-                )
+            result += (
+                f"{self.markdown_field(name, field, prefix=prefix, level=2)}"
+                f"---\n\n"
+            )
         return result
 
-    def extend_files(self, files: Files, config: MkDocsConfig, rel_path: Path):
-        result: list[File] = []
-
-        idx = 0
-        top_level_markdown = self.make_top_level()
-        top_level_file = File(
-            path=str(rel_path / f"index.md"),
-            src_dir=config['docs_dir'],
-            dest_dir=config['site_dir'],
-            use_directory_urls=config['use_directory_urls']
-        )
-        idx += 1
-
-        base_path = Path(top_level_file.abs_src_path).parent
-        os.makedirs(base_path, exist_ok=True)
-        with open(top_level_file.abs_src_path, 'w') as fh:
-            fh.write(top_level_markdown)
-        files.append(top_level_file)
-        result.append((self.root.__name__, top_level_file))
-
-        for name, field in self.root.model_fields.items():
+    def sub_models(self, model: BaseSettings) -> list[tuple[str, BaseSettings]]:
+        result: list[tuple[str, BaseSettings]] = []
+        for name, field in model.model_fields.items():
             if isinstance(field.annotation, ForwardRef):
                 # TODO: Add test for this case.
                 raise ValueError(
@@ -177,8 +145,38 @@ class MakeMd:
             except TypeError:
                 # issubclass raises on things that aren't classes.
                 continue
+            result.append((name, field))
+        return result
 
-            markdown = self.make_sub_level(field.annotation, name)
+    def extend_files(self, files: Files, config: MkDocsConfig, rel_path: Path):
+        result: list[File] = []
+        print(self.root.__name__, len(self.sub_models(self.root)))
+        top_level_filename = self.root.__name__ if len(self.sub_models(self.root)) == 0 else "index"
+
+        idx = 0
+        top_level_markdown = self.make_top_level()
+        top_level_file = File(
+            path=str(rel_path / f"{top_level_filename}.md"),
+            src_dir=config['docs_dir'],
+            dest_dir=config['site_dir'],
+            use_directory_urls=config['use_directory_urls']
+        )
+        idx += 1
+
+        base_path = Path(top_level_file.abs_src_path).parent
+        os.makedirs(base_path, exist_ok=True)
+        with open(top_level_file.abs_src_path, 'w') as fh:
+            fh.write(top_level_markdown)
+        files.append(top_level_file)
+        result.append((self.root.__name__, top_level_file))
+
+        result.extend(self.extend_files_sub(self.root, idx, files, config, rel_path, prefix=self.root.__name__))
+        return result
+
+    def extend_files_sub(self, model: BaseSettings, idx: int, files, config: MkDocsConfig, rel_path: Path, prefix: str):
+        result: list[File] = []
+        for name, field in self.sub_models(model):
+            markdown = self.make_sub_level(field.annotation, prefix + "." + field.annotation.__name__)
             file = File(
                 path=str(rel_path / f"{idx:02}_{name}.md"),
                 src_dir=config['docs_dir'],
@@ -190,4 +188,8 @@ class MakeMd:
                 fh.write(markdown)
             files.append(file)
             result.append((field.annotation.__name__, file))
+
+            r = self.extend_files_sub(field.annotation, idx, files, config, rel_path, prefix + f".{field.annotation.__name__}")
+            idx += len(r)
+            result.extend(r)
         return result

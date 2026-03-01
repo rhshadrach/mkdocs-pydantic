@@ -12,7 +12,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">= 3.8"
 version = "0.0.1"
-dependencies = ["mkdocs", "pydantic"]
+dependencies = ["mkdocs", "pydantic", "mkdocstrings[python]"]
 classifiers=[
     'Development Status :: 1 - Planning',
     'Programming Language :: Python',
@@ -34,10 +34,6 @@ Tracker = "https://github.com/rhshadrach/mkdocs-pydantic/issues"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-
-#[tool.setuptools]
-#packages = ["mkdocs_pydantic", "mkdocs_pydantic_example"]
-#package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

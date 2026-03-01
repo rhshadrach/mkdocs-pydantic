@@ -19,8 +19,7 @@ class ThreeLevels(BaseSettings):
     )
 
     second_level: SecondLevel = Field(
-        title="Second level setting",
-        description="This is the second level setting",
+        title="Second level setting", description="This is the second level setting"
     )
 
 
@@ -39,8 +38,7 @@ class SecondLevel(BaseSettings):
     )
 
     third_level: ThirdLevel = Field(
-        title="Third level setting",
-        description="This is the third level setting",
+        title="Third level setting", description="This is the third level setting"
     )
 
 

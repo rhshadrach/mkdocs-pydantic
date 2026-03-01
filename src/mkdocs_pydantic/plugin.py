@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from mkdocs.structure import StructureItem
 from mkdocs.structure.files import Files
 from mkdocs.structure.nav import Navigation, Section
 from mkdocs.structure.pages import Page
+from pydantic_settings import BaseSettings
 
 from mkdocs_pydantic.make_md import MakeMd
 from mkdocs_pydantic.structs import Node, PydanticEntry
@@ -49,7 +51,9 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
         return nav
 
     def on_files(self, files: Files, config: MkDocsConfig) -> Files:
-        self.pydantic_entries = find_pydantic_items(config["nav"], files, config)
+        self.pydantic_entries = find_pydantic_items(config["nav"])
+        for entry in self.pydantic_entries:
+            entry.add_files(files, config)
         return files
 
 
@@ -67,11 +71,7 @@ def make_section(node: Node, config: MkDocsConfig) -> list[StructureItem]:
 
 
 def find_pydantic_items(
-    data: Any,
-    files: Files,
-    config: MkDocsConfig,
-    path: Path = Path("."),
-    breadcrumbs: list[int] | None = None,
+    data: Any, path: Path = Path("."), breadcrumbs: list[int] | None = None
 ) -> list[PydanticEntry]:
     pydantic_entries = []
     if breadcrumbs is None:
@@ -81,20 +81,47 @@ def find_pydantic_items(
         # Recurse into each item in the list
         for idx, item in enumerate(data):
             pydantic_entries.extend(
-                find_pydantic_items(item, files, config, path, [*breadcrumbs, idx])
+                find_pydantic_items(item, path, [*breadcrumbs, idx])
             )
     elif isinstance(data, dict):
         # Recurse into each value in the dictionary
         for key, value in data.items():
-            pydantic_entries.extend(
-                find_pydantic_items(value, files, config, path / key, breadcrumbs)
-            )
+            pydantic_entries.extend(find_pydantic_items(value, path / key, breadcrumbs))
     elif isinstance(data, str) and data.startswith("pydantic:::"):
         class_path = data[len("pydantic:::") :]
         make_md = MakeMd(class_path)
-        entry = make_md.extend_files(
-            class_path, breadcrumbs, files, config, rel_path=path.parent
+        model = import_class_from_string(class_path)
+        model_file = make_md.extend_files(model, rel_path=path.parent)
+        entry = PydanticEntry(
+            class_path=class_path, breadcrumbs=breadcrumbs, root=model_file
         )
         pydantic_entries.append(entry)
 
     return pydantic_entries
+
+
+def import_class_from_string(fully_qualified_name_str: str) -> type[BaseSettings]:
+    """
+    Dynamically imports a class given its fully qualified name string.
+
+    Args:
+        fully_qualified_name_str (str): The full path to the class,
+                                        e.g., "my_package.my_module.MyClass"
+
+    Returns:
+        type: The imported class object.
+    """
+    try:
+        module_name, class_name = fully_qualified_name_str.rsplit(".", 1)
+    except ValueError:
+        raise ValueError(
+            f"'{fully_qualified_name_str}' does not appear to be a"
+            f" fully qualified class name."
+        ) from None
+
+    module = importlib.import_module(module_name)
+    class_object = getattr(module, class_name)
+    assert issubclass(class_object, BaseSettings)
+
+    # TODO: Why doesn't mypy narrow here?
+    return class_object  # type: ignore[no-any-return]

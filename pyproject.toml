@@ -48,6 +48,9 @@ dev = ["mkdocs-pydantic[lint, test]"]
 [tool.mypy]
 strict = true
 
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or

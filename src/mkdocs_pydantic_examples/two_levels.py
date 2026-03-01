@@ -19,8 +19,7 @@ class TwoLevels(BaseSettings):
     )
 
     second_level: SecondLevel = Field(
-        title="Second level setting",
-        description="This is the second level setting",
+        title="Second level setting", description="This is the second level setting"
     )
 
 

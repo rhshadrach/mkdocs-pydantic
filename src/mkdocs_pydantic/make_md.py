@@ -13,7 +13,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings
 
-from mkdocs_pydantic.structs import ModelFile, PydanticEntry
+from mkdocs_pydantic.structs import Node, PydanticEntry
 
 HTML_HR = '<hr stype="height:3px;border-width:0;color:gray;background-color:gray">'
 
@@ -176,7 +176,7 @@ class MakeMd:
             class_path=class_path,
             breadcrumbs=breadcrumbs,
             int_breadcrumbs=int_breadcrumbs,
-            model_file=model_file,
+            root=model_file,
         )
         return result
 
@@ -187,7 +187,7 @@ class MakeMd:
         config: MkDocsConfig,
         rel_path: Path,
         prefix: str,
-    ) -> ModelFile:
+    ) -> Node:
         if len(self.sub_models(model)) > 0:
             rel_path /= model.__name__
         name = model.__name__ if len(self.sub_models(model)) == 0 else "index"
@@ -204,7 +204,7 @@ class MakeMd:
         with open(file.abs_src_path, "w") as fh:
             fh.write(markdown)
         files.append(file)
-        model_file = ModelFile(name=model.__name__, file=file, children=[])
+        model_file = Node(name=model.__name__, file=file, children=[])
 
         for name, field in self.sub_models(model):
             assert field.annotation is not None

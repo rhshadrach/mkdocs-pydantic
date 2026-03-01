@@ -10,11 +10,11 @@ class PydanticEntry:
     class_path: str
     breadcrumbs: list[str]
     int_breadcrumbs: list[int]
-    model_file: ModelFile
+    root: Node
 
 
 @dataclasses.dataclass
-class ModelFile:
+class Node:
     name: str
     file: File
-    children: list[ModelFile]
+    children: list[Node]

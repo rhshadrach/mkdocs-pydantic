@@ -11,7 +11,7 @@ from mkdocs.structure.nav import Navigation, Section
 from mkdocs.structure.pages import Page
 
 from mkdocs_pydantic.make_md import MakeMd
-from mkdocs_pydantic.structs import ModelFile, PydanticEntry
+from mkdocs_pydantic.structs import Node, PydanticEntry
 
 
 # __init_sublcass__ of BasePlugin is untyped.
@@ -31,17 +31,15 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
                     curr = curr[crumb]
 
             obj: Page | Section
-            if len(pydantic_entry.model_file.children) == 0:
+            if len(pydantic_entry.root.children) == 0:
                 obj = Page(
-                    title=pydantic_entry.model_file.name,
-                    file=pydantic_entry.model_file.file,
+                    title=pydantic_entry.root.name,
+                    file=pydantic_entry.root.file,
                     config=config,
                 )
             else:
-                children = make_section(
-                    model_file=pydantic_entry.model_file, config=config
-                )
-                obj = Section(title=pydantic_entry.model_file.name, children=children)
+                children = make_section(node=pydantic_entry.root, config=config)
+                obj = Section(title=pydantic_entry.root.name, children=children)
 
             if isinstance(curr, Section):
                 curr.children[pydantic_entry.int_breadcrumbs[-1]] = obj
@@ -55,16 +53,14 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
         return files
 
 
-def make_section(model_file: ModelFile, config: MkDocsConfig) -> list[StructureItem]:
-    result: list[StructureItem] = [
-        Page(title=model_file.name, file=model_file.file, config=config)
-    ]
-    for child in model_file.children:
+def make_section(node: Node, config: MkDocsConfig) -> list[StructureItem]:
+    result: list[StructureItem] = [Page(title=node.name, file=node.file, config=config)]
+    for child in node.children:
         obj: Page | Section
         if len(child.children) == 0:
             obj = Page(title=child.name, file=child.file, config=config)
         else:
-            children = make_section(model_file=child, config=config)
+            children = make_section(node=child, config=config)
             obj = Section(title=child.name, children=children)
         result.append(obj)
     return result

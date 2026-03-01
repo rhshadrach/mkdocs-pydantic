@@ -24,13 +24,7 @@ repos:
         types_or: [python, rst, markdown]
         additional_dependencies: [tomli]
 
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.19.1'  # Use the sha / tag you want to point at
     hooks:
       - id: mypy
-        # note: assumes python env is setup and activated
-        name: mypy
-        entry: mypy
-        language: system
-        pass_filenames: false
-        types: [python]
-        stages: [manual]

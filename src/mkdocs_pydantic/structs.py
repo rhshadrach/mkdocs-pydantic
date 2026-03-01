@@ -10,8 +10,6 @@ class PydanticEntry:
     class_path: str
     breadcrumbs: list[str]
     int_breadcrumbs: list[int]
-    name: str
-    file: File
     model_file: ModelFile
 
 

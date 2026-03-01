@@ -18,7 +18,7 @@ from mkdocs_pydantic.structs import ModelFile, PydanticEntry
 HTML_HR = '<hr stype="height:3px;border-width:0;color:gray;background-color:gray">'
 
 
-def import_class_from_string(fully_qualified_name_str):
+def import_class_from_string(fully_qualified_name_str: str) -> type[BaseSettings]:
     """
     Dynamically imports a class given its fully qualified name string.
 
@@ -54,6 +54,8 @@ def import_class_from_string(fully_qualified_name_str):
 
     if not isinstance(class_object, type):
         raise ImportError(f"'{fully_qualified_name_str}' is not a class.")
+
+    assert issubclass(class_object, BaseSettings)
 
     return class_object
 
@@ -137,10 +139,8 @@ class MakeMd:
             )
         return result
 
-    def sub_models(
-        self, model: type[BaseSettings]
-    ) -> list[tuple[str, type[BaseSettings]]]:
-        result: list[tuple[str, type[BaseSettings]]] = []
+    def sub_models(self, model: type[BaseSettings]) -> list[tuple[str, FieldInfo]]:
+        result: list[tuple[str, FieldInfo]] = []
         for name, field in model.model_fields.items():
             if isinstance(field.annotation, ForwardRef):
                 # TODO: Add test for this case.
@@ -162,9 +162,9 @@ class MakeMd:
 
     def extend_files(
         self,
-        class_path,
-        breadcrumbs,
-        int_breadcrumbs,
+        class_path: str,
+        breadcrumbs: list[str],
+        int_breadcrumbs: list[int],
         files: Files,
         config: MkDocsConfig,
         rel_path: Path,
@@ -176,8 +176,6 @@ class MakeMd:
             class_path=class_path,
             breadcrumbs=breadcrumbs,
             int_breadcrumbs=int_breadcrumbs,
-            name=self.root.__name__,
-            file=model_file.file,
             model_file=model_file,
         )
         return result
@@ -185,11 +183,11 @@ class MakeMd:
     def extend_files_sub(
         self,
         model: type[BaseSettings],
-        files,
+        files: Files,
         config: MkDocsConfig,
         rel_path: Path,
         prefix: str,
-    ):
+    ) -> ModelFile:
         if len(self.sub_models(model)) > 0:
             rel_path /= model.__name__
         name = model.__name__ if len(self.sub_models(model)) == 0 else "index"
@@ -200,6 +198,7 @@ class MakeMd:
             dest_dir=config["site_dir"],
             use_directory_urls=config["use_directory_urls"],
         )
+        assert file.abs_src_path is not None
         base_path = Path(file.abs_src_path).parent
         os.makedirs(base_path, exist_ok=True)
         with open(file.abs_src_path, "w") as fh:
@@ -208,6 +207,8 @@ class MakeMd:
         model_file = ModelFile(name=model.__name__, file=file, children=[])
 
         for name, field in self.sub_models(model):
+            assert field.annotation is not None
+            assert issubclass(field.annotation, BaseSettings)
             model_file.children.append(
                 self.extend_files_sub(
                     field.annotation, files, config, rel_path, prefix + f".{name}"

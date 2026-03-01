@@ -12,7 +12,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">= 3.8"
 version = "0.0.1"
-dependencies = ["mkdocs", "pydantic", "mkdocstrings[python]"]
+dependencies = ["mkdocs", "pydantic", "mkdocstrings[python]", "pydantic_settings"]
 classifiers=[
     'Development Status :: 1 - Planning',
     'Programming Language :: Python',
@@ -44,6 +44,9 @@ namespaces = false
 lint = ["pre-commit", "mypy", "codespell"]
 test = ["pytest"]
 dev = ["mkdocs-pydantic[lint, test]"]
+
+[tool.mypy]
+strict = true
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.

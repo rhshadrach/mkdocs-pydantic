@@ -12,33 +12,38 @@ from pydantic_settings import BaseSettings
 from mkdocs_pydantic.structs import Node
 
 
-def run(model: type[BaseSettings], rel_path: Path, prefix: str | None = None) -> Node:
+def run(
+    model: type[BaseSettings],
+    rel_path: Path,
+    name: str | None,
+    prefix: str | None = None,
+) -> Node:
+    if name is None:
+        name = model.__name__
     if prefix is None:
         prefix = model.__name__
 
     submodels = extract_submodels(model)
     if len(submodels) > 0:
-        rel_path /= model.__name__
+        rel_path /= name
 
-    markdown = make_markdown(model, prefix)
-    name = model.__name__ if len(submodels) == 0 else "index"
+    markdown = make_markdown(model, name, prefix)
+    filename = f"{model.__name__}.md" if len(submodels) == 0 else "index.md"
     model_file = Node(
-        name=model.__name__,
-        path=rel_path / f"{name}.md",
-        markdown=markdown,
-        children=[],
+        name=name, path=rel_path / filename, markdown=markdown, children=[]
     )
 
     for name, submodel in submodels:
-        model_file.children.append(run(submodel, rel_path, prefix + f".{name}"))
+        model_file.children.append(
+            run(submodel, rel_path, name=None, prefix=prefix + f".{name}")
+        )
     return model_file
 
 
-def make_markdown(klass: type[BaseSettings], prefix: str) -> str:
-    name = klass.__name__
+def make_markdown(klass: type[BaseSettings], name: str, prefix: str) -> str:
     result = f"# {name}\n\n"
-    for name, field in klass.model_fields.items():
-        result += f"{markdown_field(name, field, prefix=prefix, level=2)}---\n\n"
+    for field_name, field in klass.model_fields.items():
+        result += f"{markdown_field(field_name, field, prefix=prefix, level=2)}---\n\n"
     return result
 
 

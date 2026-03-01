@@ -46,7 +46,10 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
 
 
 def find_pydantic_entries(
-    data: Any, path: Path = Path("."), breadcrumbs: list[int] | None = None
+    data: Any,
+    path: Path = Path("."),
+    breadcrumbs: list[int] | None = None,
+    alias: str | None = None,
 ) -> list[PydanticEntry]:
     pydantic_entries = []
     if breadcrumbs is None:
@@ -62,12 +65,12 @@ def find_pydantic_entries(
         # Recurse into each value in the dictionary
         for key, value in data.items():
             pydantic_entries.extend(
-                find_pydantic_entries(value, path / key, breadcrumbs)
+                find_pydantic_entries(value, path / key, breadcrumbs, alias=key)
             )
     elif isinstance(data, str) and data.startswith("pydantic:::"):
         class_path = data[len("pydantic:::") :]
         model = import_class_from_string(class_path)
-        model_file = make_md.run(model, rel_path=path.parent)
+        model_file = make_md.run(model, rel_path=path.parent, name=alias)
         entry = PydanticEntry(
             class_path=class_path, breadcrumbs=breadcrumbs, root=model_file
         )

@@ -17,9 +17,9 @@ theme:
         name: Switch to light mode
 nav:
   - index.md
-  - TwoLevels: 'pydantic:::mkdocs_pydantic_examples.TwoLevels'
+  - 'pydantic:::mkdocs_pydantic_examples.TwoLevels'
   - Base Directory:
-      - ThreeLevels: 'pydantic:::mkdocs_pydantic_examples.ThreeLevels'
+      - SomeAlias: 'pydantic:::mkdocs_pydantic_examples.ThreeLevels'
   - 'pydantic:::mkdocs_pydantic_examples.SingleLevel'
   - Static Example:
       - static/index.md

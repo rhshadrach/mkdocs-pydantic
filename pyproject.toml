@@ -41,7 +41,7 @@ include = ["mkdocs_pydantic*"]
 namespaces = false
 
 [project.optional-dependencies]
-lint = ["pre-commit"]
+lint = ["pre-commit", "mypy", "codespell"]
 test = ["pytest"]
 dev = ["mkdocs-pydantic[lint, test]"]
 
@@ -76,4 +76,7 @@ select = [
     "UP",  # pyupgrade
     "W",   # pycodestyle - warning
     "YTT", # flake8-2020
+]
+ignore = [
+    "PLR0913",  # Too many arguments in function definition
 ]

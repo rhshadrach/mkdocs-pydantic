@@ -43,6 +43,7 @@ class SecondLevel(BaseSettings):
         description="This is the third level setting",
     )
 
+
 class ThirdLevel(BaseSettings):
     list_with_default: list[int] = Field(
         default=[1, 2, 3],
@@ -56,6 +57,7 @@ class ThirdLevel(BaseSettings):
         title="Integer setting without default",
         description="This is an integer setting without a default",
     )
+
 
 ThreeLevels.model_rebuild()
 SecondLevel.model_rebuild()

@@ -1,20 +1,22 @@
 from __future__ import annotations
 
-from typing import Any, ForwardRef
-import io
 import importlib
+import io
+import os
 import pprint
 from pathlib import Path
+from typing import Any, ForwardRef
+
+from mkdocs.config.defaults import MkDocsConfig
+from mkdocs.structure.files import File, Files
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings
-from mkdocs.structure.files import File
-from mkdocs.structure.files import Files
-from mkdocs.config.defaults import MkDocsConfig
-import os
 
+from mkdocs_pydantic.structs import ModelFile, PydanticEntry
 
 HTML_HR = '<hr stype="height:3px;border-width:0;color:gray;background-color:gray">'
+
 
 def import_class_from_string(fully_qualified_name_str):
     """
@@ -31,34 +33,40 @@ def import_class_from_string(fully_qualified_name_str):
     try:
         module_name, class_name = fully_qualified_name_str.rsplit(".", 1)
     except ValueError:
-        raise ImportError(f"'{fully_qualified_name_str}' does not appear to be a fully qualified class name.")
+        raise ImportError(
+            f"'{fully_qualified_name_str}' does not appear to be a"
+            f" fully qualified class name."
+        ) from None
 
     # 2. Import the module
     try:
         module = importlib.import_module(module_name)
     except ImportError as e:
-        raise ImportError(f"Could not import module '{module_name}': {e}")
+        raise ImportError(f"Could not import module '{module_name}': {e}") from None
 
     # 3. Get the class from the module
     try:
         class_object = getattr(module, class_name)
     except AttributeError as e:
-        raise ImportError(f"Module '{module_name}' has no class named '{class_name}': {e}")
+        raise ImportError(
+            f"Module '{module_name}' has no class named '{class_name}': {e}"
+        ) from None
 
     if not isinstance(class_object, type):
         raise ImportError(f"'{fully_qualified_name_str}' is not a class.")
 
     return class_object
 
+
 class MakeMd:
     def __init__(self, fully_qualified_name: str) -> None:
         self.fully_qualified_name = fully_qualified_name
-        self.root = import_class_from_string(fully_qualified_name)
+        self.root: type[BaseSettings] = import_class_from_string(fully_qualified_name)
 
     @staticmethod
     def formatted_default(obj: Any) -> str:
         buf = io.StringIO()
-        pprint.pprint(obj, stream=buf)
+        pprint.pprint(obj, stream=buf)  # noqa: T203
         pretty_default = buf.getvalue().strip()
         if "\n" in pretty_default:
             result = f"\n```\n{pretty_default}\n```\n"
@@ -80,7 +88,9 @@ class MakeMd:
         )
         return result
 
-    def markdown_field(self, name: str, field: FieldInfo, prefix: str, level: int = 3) -> str:
+    def markdown_field(
+        self, name: str, field: FieldInfo, prefix: str, level: int = 3
+    ) -> str:
         result = ""
         toc_label = f'{{ data-toc-label="{name}" }}'
         result += f"{'#' * level} {prefix}.{name} {toc_label}\n\n"
@@ -109,7 +119,8 @@ class MakeMd:
         for name, field in self.root.model_fields.items():
             result += (
                 '<div class="mkdocs-pydantic-field" markdown>\n\n'
-                f"{self.markdown_field(name, field, prefix=self.root.__name__)}"  # TODO: Add \n?
+                # TODO: Add \n?
+                f"{self.markdown_field(name, field, prefix=self.root.__name__)}"
                 "</div>\n\n"
                 "---\n\n"
             )
@@ -122,13 +133,14 @@ class MakeMd:
         result = f"# {title}\n\n"
         for name, field in klass.model_fields.items():
             result += (
-                f"{self.markdown_field(name, field, prefix=prefix, level=2)}"
-                f"---\n\n"
+                f"{self.markdown_field(name, field, prefix=prefix, level=2)}---\n\n"
             )
         return result
 
-    def sub_models(self, model: BaseSettings) -> list[tuple[str, BaseSettings]]:
-        result: list[tuple[str, BaseSettings]] = []
+    def sub_models(
+        self, model: type[BaseSettings]
+    ) -> list[tuple[str, type[BaseSettings]]]:
+        result: list[tuple[str, type[BaseSettings]]] = []
         for name, field in model.model_fields.items():
             if isinstance(field.annotation, ForwardRef):
                 # TODO: Add test for this case.
@@ -148,48 +160,57 @@ class MakeMd:
             result.append((name, field))
         return result
 
-    def extend_files(self, files: Files, config: MkDocsConfig, rel_path: Path):
-        result: list[File] = []
-        print(self.root.__name__, len(self.sub_models(self.root)))
-        top_level_filename = self.root.__name__ if len(self.sub_models(self.root)) == 0 else "index"
-
-        idx = 0
-        top_level_markdown = self.make_top_level()
-        top_level_file = File(
-            path=str(rel_path / f"{top_level_filename}.md"),
-            src_dir=config['docs_dir'],
-            dest_dir=config['site_dir'],
-            use_directory_urls=config['use_directory_urls']
+    def extend_files(
+        self,
+        class_path,
+        breadcrumbs,
+        int_breadcrumbs,
+        files: Files,
+        config: MkDocsConfig,
+        rel_path: Path,
+    ) -> PydanticEntry:
+        model_file = self.extend_files_sub(
+            self.root, files, config, rel_path, prefix=self.root.__name__
         )
-        idx += 1
+        result = PydanticEntry(
+            class_path=class_path,
+            breadcrumbs=breadcrumbs,
+            int_breadcrumbs=int_breadcrumbs,
+            name=self.root.__name__,
+            file=model_file.file,
+            model_file=model_file,
+        )
+        return result
 
-        base_path = Path(top_level_file.abs_src_path).parent
+    def extend_files_sub(
+        self,
+        model: type[BaseSettings],
+        files,
+        config: MkDocsConfig,
+        rel_path: Path,
+        prefix: str,
+    ):
+        if len(self.sub_models(model)) > 0:
+            rel_path /= model.__name__
+        name = model.__name__ if len(self.sub_models(model)) == 0 else "index"
+        markdown = self.make_sub_level(model, prefix)
+        file = File(
+            path=str(rel_path / f"{name}.md"),
+            src_dir=config["docs_dir"],
+            dest_dir=config["site_dir"],
+            use_directory_urls=config["use_directory_urls"],
+        )
+        base_path = Path(file.abs_src_path).parent
         os.makedirs(base_path, exist_ok=True)
-        with open(top_level_file.abs_src_path, 'w') as fh:
-            fh.write(top_level_markdown)
-        files.append(top_level_file)
-        result.append((self.root.__name__, top_level_file))
+        with open(file.abs_src_path, "w") as fh:
+            fh.write(markdown)
+        files.append(file)
+        model_file = ModelFile(name=model.__name__, file=file, children=[])
 
-        result.extend(self.extend_files_sub(self.root, idx, files, config, rel_path, prefix=self.root.__name__))
-        return result
-
-    def extend_files_sub(self, model: BaseSettings, idx: int, files, config: MkDocsConfig, rel_path: Path, prefix: str):
-        result: list[File] = []
         for name, field in self.sub_models(model):
-            markdown = self.make_sub_level(field.annotation, prefix + "." + field.annotation.__name__)
-            file = File(
-                path=str(rel_path / f"{idx:02}_{name}.md"),
-                src_dir=config['docs_dir'],
-                dest_dir=config['site_dir'],
-                use_directory_urls=config['use_directory_urls']
+            model_file.children.append(
+                self.extend_files_sub(
+                    field.annotation, files, config, rel_path, prefix + f".{name}"
+                )
             )
-            idx += 1
-            with open(file.abs_src_path, 'w') as fh:
-                fh.write(markdown)
-            files.append(file)
-            result.append((field.annotation.__name__, file))
-
-            r = self.extend_files_sub(field.annotation, idx, files, config, rel_path, prefix + f".{field.annotation.__name__}")
-            idx += len(r)
-            result.extend(r)
-        return result
+        return model_file

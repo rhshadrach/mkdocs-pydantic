@@ -38,4 +38,5 @@ class SecondLevel(BaseSettings):
         description="This is an integer setting without a default",
     )
 
+
 TwoLevels.model_rebuild()

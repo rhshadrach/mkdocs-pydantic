@@ -1,0 +1,27 @@
+name: Lint
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    concurrency:
+      group: lint-${{ github.event_name == 'push' && github.run_number || github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./github/actions/setup
+        with:
+          install-extras: 'lint'
+
+      - name: Lint
+        uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --verbose --all-files

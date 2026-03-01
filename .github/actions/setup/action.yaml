@@ -1,0 +1,22 @@
+name: Setup Environment
+
+inputs:
+  install-extras:
+    description: Package extras to install (e.g. "lint", "test", "doc")
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv
+      uses: astra-sh/setup-uv@v7
+      with:
+        python-version: "3.13"
+        activate-environment: "true"
+
+    - name: Install dependencies
+      run: uv pip install .[${{ inputs.install-extras }}]
+
+    - name: List installed packages
+      run: uv pip freeze

@@ -12,7 +12,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">= 3.8"
 version = "0.0.1"
-dependencies = ["mkdocs", "pydantic", "mkdocstrings[python]"]
+dependencies = ["mkdocs-material", "pydantic", "mkdocstrings[python]"]
 classifiers=[
     'Development Status :: 1 - Planning',
     'Programming Language :: Python',
@@ -41,7 +41,7 @@ include = ["mkdocs_pydantic*"]
 namespaces = false
 
 [project.optional-dependencies]
-lint = ["pre-commit", "mypy", "codespell"]
+lint = ["pre-commit", "pip", "mypy", "codespell"]
 test = ["pytest"]
 dev = ["mkdocs-pydantic[lint, test]"]
 

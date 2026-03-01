@@ -5,7 +5,10 @@ import os
 from pathlib import Path
 
 from mkdocs.config.defaults import MkDocsConfig
+from mkdocs.structure import StructureItem
 from mkdocs.structure.files import File, Files
+from mkdocs.structure.nav import Section
+from mkdocs.structure.pages import Page
 
 
 @dataclasses.dataclass
@@ -16,6 +19,15 @@ class PydanticEntry:
 
     def add_files(self, files: Files, config: MkDocsConfig) -> None:
         self.root.add_files(files, config)
+
+    def make_nav_object(self, config: MkDocsConfig) -> Page | Section:
+        obj: Page | Section
+        if len(self.root.children) == 0:
+            obj = Page(title=self.root.name, file=self.root.file, config=config)
+        else:
+            children = self.root.make_children(config)
+            obj = Section(title=self.root.name, children=children)
+        return obj
 
 
 @dataclasses.dataclass
@@ -48,3 +60,17 @@ class Node:
         files.append(self.file)
         for child in self.children:
             child.add_files(files, config)
+
+    def make_children(self, config: MkDocsConfig) -> list[StructureItem]:
+        result: list[StructureItem] = [
+            Page(title=self.name, file=self.file, config=config)
+        ]
+        for child in self.children:
+            obj: Page | Section
+            if len(child.children) == 0:
+                obj = Page(title=child.name, file=child.file, config=config)
+            else:
+                children = child.make_children(config=config)
+                obj = Section(title=child.name, children=children)
+            result.append(obj)
+        return result

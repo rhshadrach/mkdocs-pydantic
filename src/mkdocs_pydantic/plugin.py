@@ -6,14 +6,13 @@ from typing import Any
 
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.plugins import BasePlugin
-from mkdocs.structure import StructureItem
 from mkdocs.structure.files import Files
 from mkdocs.structure.nav import Navigation, Section
 from mkdocs.structure.pages import Page
 from pydantic_settings import BaseSettings
 
 from mkdocs_pydantic import make_md
-from mkdocs_pydantic.structs import Node, PydanticEntry
+from mkdocs_pydantic.structs import PydanticEntry
 
 
 # __init_sublcass__ of BasePlugin is untyped.
@@ -33,17 +32,7 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
                     curr = curr[crumb]
 
             obj: Page | Section
-            if len(pydantic_entry.root.children) == 0:
-                obj = Page(
-                    title=pydantic_entry.root.name,
-                    file=pydantic_entry.root.file,
-                    config=config,
-                )
-            else:
-                children = make_section_children(
-                    node=pydantic_entry.root, config=config
-                )
-                obj = Section(title=pydantic_entry.root.name, children=children)
+            obj = pydantic_entry.make_nav_object(config)
 
             if isinstance(curr, Section):
                 curr.children[pydantic_entry.breadcrumbs[-1]] = obj
@@ -56,19 +45,6 @@ class MkdocsPydantic(BasePlugin):  # type: ignore[no-untyped-call, type-arg]
         for entry in self.pydantic_entries:
             entry.add_files(files, config)
         return files
-
-
-def make_section_children(node: Node, config: MkDocsConfig) -> list[StructureItem]:
-    result: list[StructureItem] = [Page(title=node.name, file=node.file, config=config)]
-    for child in node.children:
-        obj: Page | Section
-        if len(child.children) == 0:
-            obj = Page(title=child.name, file=child.file, config=config)
-        else:
-            children = make_section_children(node=child, config=config)
-            obj = Section(title=child.name, children=children)
-        result.append(obj)
-    return result
 
 
 def find_pydantic_entries(

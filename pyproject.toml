@@ -41,7 +41,13 @@ include = ["mkdocs_pydantic*"]
 namespaces = false
 
 [project.optional-dependencies]
-lint = ["pre-commit", "pip", "mypy", "codespell"]
+lint = [
+    "mypy",
+    "codespell",
+    "pip",
+    "pre-commit",
+    "pytest",
+]
 test = ["pytest"]
 dev = ["mkdocs-pydantic[lint, test]"]
 

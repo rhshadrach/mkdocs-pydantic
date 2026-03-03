@@ -41,7 +41,13 @@ include = ["mkdocs_pydantic*"]
 namespaces = false
 
 [project.optional-dependencies]
-lint = ["pre-commit", "pip", "mypy", "codespell"]
+lint = [
+    "mypy",
+    "codespell",
+    "pip",
+    "pre-commit",
+    "pytest",
+]
 test = ["pytest"]
 dev = ["mkdocs-pydantic[lint, test]"]
 
@@ -85,4 +91,5 @@ select = [
 ]
 ignore = [
     "PLR0913",  # Too many arguments in function definition
+    "PLR2004",  # Magic value used in comparison
 ]

@@ -1,9 +1,13 @@
 site_name: mkdocs-pydantic
+repo_url: https://github.com/rhshadrach/mkdocs-pydantic
+repo_name: rhshadrach/mkdocs-pydantic
 theme:
   name: material
   features:
     - navigation.indexes
     - navigation.expand
+    - search.suggest
+    - search.highlight
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default

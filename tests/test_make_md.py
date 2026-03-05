@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import ForwardRef
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, AliasPath, BaseModel, Field
 from pydantic_core import PydanticUndefined
 
 from mkdocs_pydantic.make_md import (
@@ -35,6 +35,50 @@ class Nested(BaseModel):
 class GenericFields(BaseModel):
     items: list[int] = Field(default=[], description="A list of ints")
     name: str = Field(description="A name")
+
+
+class ConstrainedModel(BaseModel):
+    age: int = Field(default=0, ge=0, le=150, description="Age in years")
+    score: float = Field(default=0.0, gt=0, lt=100, description="A score")
+    step: int = Field(default=10, multiple_of=5, description="Step size")
+    username: str = Field(
+        min_length=3,
+        max_length=20,
+        pattern=r"^[a-z][a-z0-9_]*$",
+        description="Username",
+    )
+
+
+class AliasedModel(BaseModel):
+    field_name: str = Field(
+        default="x", alias="fieldName", description="An aliased field"
+    )
+    input_field: str = Field(
+        default="y",
+        validation_alias=AliasChoices("input", AliasPath("data", "input")),
+        description="A validation-aliased field",
+    )
+    output_field: str = Field(
+        default="z",
+        serialization_alias="outputField",
+        description="A serialization-aliased field",
+    )
+
+
+class ExtrasModel(BaseModel):
+    old_field: str = Field(
+        default="old", deprecated=True, description="Deprecated field"
+    )
+    locked: int = Field(default=42, frozen=True, description="A frozen field")
+    hidden: str = Field(default="secret", exclude=True, description="An excluded field")
+    with_examples: str = Field(
+        default="foo", examples=["bar", "baz"], description="A field with examples"
+    )
+    with_extra: int = Field(
+        default=0,
+        json_schema_extra={"unit": "seconds", "format": "duration"},
+        description="Extra",
+    )
 
 
 class Level3(BaseModel):
@@ -141,6 +185,112 @@ class TestMarkdownField:
         field = FlatModel.model_fields["count"]
         result = markdown_field("count", field, prefix="FlatModel", level=2)
         assert "- Default: `0`\n" in result
+
+    def test_title_displayed(self) -> None:
+        class WithTitle(BaseModel):
+            f: str = Field(default="x", title="My Title", description="desc")
+
+        field = WithTitle.model_fields["f"]
+        result = markdown_field("f", field, prefix="P", level=2)
+        assert "My Title\n\n" in result
+
+    def test_title_none_not_displayed(self) -> None:
+        class NoTitle(BaseModel):
+            f: str = Field(default="x", description="desc")
+
+        field = NoTitle.model_fields["f"]
+        result = markdown_field("f", field, prefix="P", level=2)
+        assert "None" not in result
+
+    # ---- Aliases ----
+
+    def test_alias(self) -> None:
+        field = AliasedModel.model_fields["field_name"]
+        result = markdown_field("field_name", field, prefix="AliasedModel", level=2)
+        assert "- Alias: `fieldName`\n" in result
+
+    def test_validation_alias(self) -> None:
+        field = AliasedModel.model_fields["input_field"]
+        result = markdown_field("input_field", field, prefix="AliasedModel", level=2)
+        assert "- Validation alias:" in result
+
+    def test_serialization_alias(self) -> None:
+        field = AliasedModel.model_fields["output_field"]
+        result = markdown_field("output_field", field, prefix="AliasedModel", level=2)
+        assert "- Serialization alias: `outputField`\n" in result
+
+    # ---- Numeric constraints ----
+
+    def test_ge_le_constraints(self) -> None:
+        field = ConstrainedModel.model_fields["age"]
+        result = markdown_field("age", field, prefix="C", level=2)
+        assert ">= 0" in result
+        assert "<= 150" in result
+
+    def test_gt_lt_constraints(self) -> None:
+        field = ConstrainedModel.model_fields["score"]
+        result = markdown_field("score", field, prefix="C", level=2)
+        assert "> 0" in result
+        assert "< 100" in result
+
+    def test_multiple_of_constraint(self) -> None:
+        field = ConstrainedModel.model_fields["step"]
+        result = markdown_field("step", field, prefix="C", level=2)
+        assert "multiple of 5" in result
+
+    # ---- String/collection constraints ----
+
+    def test_min_max_length(self) -> None:
+        field = ConstrainedModel.model_fields["username"]
+        result = markdown_field("username", field, prefix="C", level=2)
+        assert "- Min length: 3\n" in result
+        assert "- Max length: 20\n" in result
+
+    def test_pattern(self) -> None:
+        field = ConstrainedModel.model_fields["username"]
+        result = markdown_field("username", field, prefix="C", level=2)
+        assert "- Pattern: `^[a-z][a-z0-9_]*$`\n" in result
+
+    # ---- Deprecated ----
+
+    def test_deprecated(self) -> None:
+        field = ExtrasModel.model_fields["old_field"]
+        result = markdown_field("old_field", field, prefix="E", level=2)
+        assert "**Deprecated**\n\n" in result
+
+    def test_not_deprecated(self) -> None:
+        field = FlatModel.model_fields["name"]
+        result = markdown_field("name", field, prefix="FlatModel", level=2)
+        assert "Deprecated" not in result
+
+    # ---- Frozen ----
+
+    def test_frozen(self) -> None:
+        field = ExtrasModel.model_fields["locked"]
+        result = markdown_field("locked", field, prefix="E", level=2)
+        assert "- Frozen (immutable)\n" in result
+
+    # ---- Exclude ----
+
+    def test_exclude(self) -> None:
+        field = ExtrasModel.model_fields["hidden"]
+        result = markdown_field("hidden", field, prefix="E", level=2)
+        assert "- Excluded from serialization\n" in result
+
+    # ---- Examples ----
+
+    def test_examples(self) -> None:
+        field = ExtrasModel.model_fields["with_examples"]
+        result = markdown_field("with_examples", field, prefix="E", level=2)
+        assert "- Examples: `bar`, `baz`\n" in result
+
+    # ---- JSON schema extra ----
+
+    def test_json_schema_extra(self) -> None:
+        field = ExtrasModel.model_fields["with_extra"]
+        result = markdown_field("with_extra", field, prefix="E", level=2)
+        assert "- unit: `seconds`\n" in result
+        assert "- format: `duration`\n" in result
 
 
 # ---- make_markdown ----

@@ -49,7 +49,10 @@ def markdown_field(name: str, field: FieldInfo, prefix: str, level: int) -> str:
     toc_label = f'{{ data-toc-label="{name}" }}'
     result += f"{'#' * level} {prefix}.{name} {toc_label}\n\n"
 
-    if field.title is None:
+    if field.deprecated:
+        result += "**Deprecated**\n\n"
+
+    if field.title is not None:
         result += f"{field.title}\n\n"
     if field.description is not None:
         result += f"{field.description}\n\n"
@@ -63,10 +66,81 @@ def markdown_field(name: str, field: FieldInfo, prefix: str, level: int) -> str:
     result += f"- Type: {annotation_str}\n"
 
     if field.default is PydanticUndefined:
-        result += "- Required\n\n"
+        result += "- Required\n"
     else:
-        result += f"- Default: {formatted_default(field.default)}\n\n"
+        result += f"- Default: {formatted_default(field.default)}\n"
+
+    # Aliases
+    if field.alias is not None:
+        result += f"- Alias: `{field.alias}`\n"
+    if field.validation_alias is not None:
+        result += f"- Validation alias: `{field.validation_alias}`\n"
+    if field.serialization_alias is not None:
+        result += f"- Serialization alias: `{field.serialization_alias}`\n"
+
+    # Numeric constraints
+    constraints = _format_constraints(field)
+    if constraints:
+        result += f"- Constraints: {constraints}\n"
+
+    # String/collection constraints
+    if field.metadata:
+        min_len = _get_metadata(field, "min_length")
+        max_len = _get_metadata(field, "max_length")
+        pattern = _get_metadata(field, "pattern")
+        if min_len is not None:
+            result += f"- Min length: {min_len}\n"
+        if max_len is not None:
+            result += f"- Max length: {max_len}\n"
+        if pattern is not None:
+            result += f"- Pattern: `{pattern}`\n"
+
+    # Other attributes
+    if field.frozen:
+        result += "- Frozen (immutable)\n"
+    if field.exclude:
+        result += "- Excluded from serialization\n"
+
+    # Examples
+    if field.examples:
+        result += f"- Examples: {', '.join(f'`{e}`' for e in field.examples)}\n"
+
+    # JSON schema extra
+    if field.json_schema_extra is not None and isinstance(
+        field.json_schema_extra, dict
+    ):
+        for key, value in field.json_schema_extra.items():
+            result += f"- {key}: `{value}`\n"
+
+    result += "\n"
     return result
+
+
+def _format_constraints(field: FieldInfo) -> str:
+    parts: list[str] = []
+    ge = _get_metadata(field, "ge")
+    gt = _get_metadata(field, "gt")
+    le = _get_metadata(field, "le")
+    lt = _get_metadata(field, "lt")
+    multiple_of = _get_metadata(field, "multiple_of")
+    if gt is not None:
+        parts.append(f"> {gt}")
+    if ge is not None:
+        parts.append(f">= {ge}")
+    if lt is not None:
+        parts.append(f"< {lt}")
+    if le is not None:
+        parts.append(f"<= {le}")
+    if multiple_of is not None:
+        parts.append(f"multiple of {multiple_of}")
+    return ", ".join(parts)
+
+
+def _get_metadata(field: FieldInfo, attr: str) -> Any:
+    for item in field.metadata:
+        if hasattr(item, attr):
+            return getattr(item, attr)
+    return None
 
 
 def formatted_default(obj: Any) -> str:

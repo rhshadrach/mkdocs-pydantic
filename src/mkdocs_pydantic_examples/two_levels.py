@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class TwoLevels(BaseModel):
@@ -32,6 +32,9 @@ class TwoLevels(BaseModel):
             " environment-specific credentials that should be injected from a"
             " secrets manager. Never log or expose this value in error messages."
         ),
+        validation_alias=AliasChoices("connection_string", "dsn", "database_url"),
+        exclude=True,
+        examples=["postgresql://user:pass@localhost:5432/mydb"],
     )
 
     read_only: bool = Field(
@@ -64,6 +67,8 @@ class TwoLevels(BaseModel):
             " which may be appropriate for latency-sensitive operations where fast"
             " failure is preferred over eventual success."
         ),
+        ge=0,
+        le=10,
     )
 
     query_timeout: float = Field(
@@ -80,6 +85,8 @@ class TwoLevels(BaseModel):
             " Analytical or batch queries that legitimately require more time should"
             " use a dedicated database configuration with a higher timeout."
         ),
+        gt=0,
+        json_schema_extra={"unit": "seconds"},
     )
 
     table_schemas: dict[str, list[str]] = Field(
@@ -165,6 +172,7 @@ class ConnectionPool(BaseModel):
             " spikes after periods of inactivity when the pool needs to create new"
             " connections to meet sudden demand."
         ),
+        ge=0,
     )
 
     max_size: int = Field(
@@ -180,6 +188,7 @@ class ConnectionPool(BaseModel):
             " on the overflow_strategy setting. A typical starting point is 10-20"
             " connections per application instance for OLTP workloads."
         ),
+        ge=1,
     )
 
     max_idle_time: float = Field(
@@ -258,6 +267,8 @@ class ConnectionPool(BaseModel):
             " waiting, which is useful for fail-fast scenarios where queuing is"
             " unacceptable. The 'block' strategy is recommended for most workloads."
         ),
+        pattern=r"^(block|create|error)$",
+        examples=["block", "create", "error"],
     )
 
     per_host_limits: dict[str, int] = Field(

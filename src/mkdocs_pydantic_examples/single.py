@@ -41,6 +41,9 @@ class SingleLevel(BaseModel):
             " environments, this value should match the containerPort declared in"
             " the pod specification."
         ),
+        ge=1,
+        le=65535,
+        examples=[80, 443, 8080, 8443],
     )
 
     debug: bool = Field(
@@ -70,6 +73,7 @@ class SingleLevel(BaseModel):
             " I/O-bound workloads, values between 2.0 and 4.0 per core are typical;"
             " for CPU-bound workloads, 1.0 per core is usually optimal."
         ),
+        gt=0,
     )
 
     log_level: LogLevel = Field(
@@ -102,6 +106,8 @@ class SingleLevel(BaseModel):
             " replicas. Never commit this value to version control; instead, inject"
             " it from a secrets manager or environment variable."
         ),
+        min_length=32,
+        exclude=True,
     )
 
     tags: list[str] = Field(
@@ -209,6 +215,9 @@ class SingleLevel(BaseModel):
             " typical. File upload endpoints may need higher limits configured"
             " separately at the reverse proxy layer."
         ),
+        ge=0,
+        examples=[1048576, 10485760],
+        json_schema_extra={"unit": "bytes"},
     )
 
     timeout: tuple[int, int] = Field(

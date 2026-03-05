@@ -4,10 +4,8 @@ from pathlib import Path
 from typing import ForwardRef
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, AliasPath, BaseModel, Field
 from pydantic_core import PydanticUndefined
-
-from pydantic import AliasChoices, AliasPath
 
 from mkdocs_pydantic.make_md import (
     extract_submodels,
@@ -44,31 +42,42 @@ class ConstrainedModel(BaseModel):
     score: float = Field(default=0.0, gt=0, lt=100, description="A score")
     step: int = Field(default=10, multiple_of=5, description="Step size")
     username: str = Field(
-        min_length=3, max_length=20, pattern=r"^[a-z][a-z0-9_]*$", description="Username"
+        min_length=3,
+        max_length=20,
+        pattern=r"^[a-z][a-z0-9_]*$",
+        description="Username",
     )
 
 
 class AliasedModel(BaseModel):
-    field_name: str = Field(default="x", alias="fieldName", description="An aliased field")
+    field_name: str = Field(
+        default="x", alias="fieldName", description="An aliased field"
+    )
     input_field: str = Field(
         default="y",
         validation_alias=AliasChoices("input", AliasPath("data", "input")),
         description="A validation-aliased field",
     )
     output_field: str = Field(
-        default="z", serialization_alias="outputField", description="A serialization-aliased field"
+        default="z",
+        serialization_alias="outputField",
+        description="A serialization-aliased field",
     )
 
 
 class ExtrasModel(BaseModel):
-    old_field: str = Field(default="old", deprecated=True, description="Deprecated field")
+    old_field: str = Field(
+        default="old", deprecated=True, description="Deprecated field"
+    )
     locked: int = Field(default=42, frozen=True, description="A frozen field")
     hidden: str = Field(default="secret", exclude=True, description="An excluded field")
     with_examples: str = Field(
         default="foo", examples=["bar", "baz"], description="A field with examples"
     )
     with_extra: int = Field(
-        default=0, json_schema_extra={"unit": "seconds", "format": "duration"}, description="Extra"
+        default=0,
+        json_schema_extra={"unit": "seconds", "format": "duration"},
+        description="Extra",
     )
 
 

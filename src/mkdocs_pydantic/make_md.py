@@ -106,10 +106,11 @@ def markdown_field(name: str, field: FieldInfo, prefix: str, level: int) -> str:
         result += f"- Examples: {', '.join(f'`{e}`' for e in field.examples)}\n"
 
     # JSON schema extra
-    if field.json_schema_extra is not None:
-        if isinstance(field.json_schema_extra, dict):
-            for key, value in field.json_schema_extra.items():
-                result += f"- {key}: `{value}`\n"
+    if field.json_schema_extra is not None and isinstance(
+        field.json_schema_extra, dict
+    ):
+        for key, value in field.json_schema_extra.items():
+            result += f"- {key}: `{value}`\n"
 
     result += "\n"
     return result

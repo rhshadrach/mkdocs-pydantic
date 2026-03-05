@@ -16,6 +16,10 @@ class ThreeLevels(BaseModel):
             " letter, and be no longer than 63 characters to comply with DNS"
             " naming rules used for internal service discovery."
         ),
+        min_length=1,
+        max_length=63,
+        pattern=r"^[a-z][a-z0-9-]*$",
+        examples=["my-service", "auth-api", "payment-gateway"],
     )
 
     replicas: int = Field(
@@ -31,6 +35,7 @@ class ThreeLevels(BaseModel):
             " to absorb traffic spikes and tolerate the loss of a single instance"
             " without degraded performance for end users."
         ),
+        ge=1,
     )
 
     environment: str = Field(
@@ -165,6 +170,9 @@ class Networking(BaseModel):
             " application binds to at startup; a mismatch causes the readiness"
             " probe to fail and prevents the replica from receiving traffic."
         ),
+        alias="port",
+        ge=1,
+        le=65535,
     )
 
     enable_tls: bool = Field(
@@ -181,6 +189,7 @@ class Networking(BaseModel):
             " environments. End-to-end encryption from ingress to pod can be"
             " configured separately via mutual TLS policies."
         ),
+        deprecated="TLS is now always enabled. This field will be removed in v3.0.",
     )
 
     allowed_cidrs: list[str] = Field(
@@ -284,6 +293,9 @@ class Monitoring(BaseModel):
             " For batch processing jobs or low-traffic services, 30 or 60 seconds"
             " may be sufficient and reduces monitoring infrastructure costs."
         ),
+        gt=0,
+        multiple_of=5,
+        json_schema_extra={"unit": "seconds"},
     )
 
     enable_tracing: bool = Field(
@@ -317,6 +329,8 @@ class Monitoring(BaseModel):
             " are always traced regardless of this setting, allowing on-demand"
             " debugging without configuration changes."
         ),
+        ge=0.0,
+        le=1.0,
     )
 
     alert_thresholds: dict[str, float] = Field(
@@ -386,6 +400,8 @@ class Monitoring(BaseModel):
             " retention period should be archived to cold storage separately via"
             " the log export pipeline."
         ),
+        ge=1,
+        frozen=True,
     )
 
     dashboard_ids: list[str] = Field(
